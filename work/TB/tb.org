@@ -1,0 +1,45 @@
+
+* 软件介绍
+
+  1. 官网
+     [[www.tradeblazer.net]]
+  2. 软件下载安装
+     [[file:week1/introduction/tb_plus_download.png]]
+  3. 登陆及登陆后界面
+     [[file:week1/introduction/tb_plus_login_1.png]]
+     [[file:week1/introduction/tb_plus_login_2.png]]
+
+* 建立图表
+
+  1. 新建工作区
+     [[file:week1/new_wa/new_wa.png]]
+  2. 插入分时图、行情报价、K线图
+     [[file:week1/new_wa/new_wa_01.png]]
+  3. 水平/垂直拆分
+     [[file:week1/new_wa/new_wa_02.png]]
+
+* 模拟账户注册
+  [[file:week1/sim_acc/sim_acc.png]]
+
+* 手工下单
+
+  1. 手工下单
+     [[file:week1/man_order/man_order.png]]
+  2. 批量下单
+     [[file:week1/man_order/man_order_auto.png]]
+  3. 一键撤单/一键全平
+
+* 公式管理
+  
+  1. 公式管理器
+     [[file:week1/function/fun_manag.png]]
+  2. 用户函数与公式应用
+     - 用户函数
+       在编写策略中，有些功能可能反复用到，为提高编程效率，封装为用户函数
+     - 公式应用
+       一般指交易策略或技术指标
+  3. 公式应用导入导出
+     - 有源码
+     - 无源码
+     
+     [[file:week1/function/fun_exp.png]]
