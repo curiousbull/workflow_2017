@@ -13,7 +13,7 @@
 
   1. 新建工作区
      [[file:week1/new_wa/new_wa.png]]
-  2. 插入分时图、行情报价、K线图
+  2. 插入分时图、行情报价、K 线图
      [[file:week1/new_wa/new_wa_01.png]]
   3. 水平/垂直拆分
      [[file:week1/new_wa/new_wa_02.png]]
@@ -43,3 +43,60 @@
      - 无源码
      
      [[file:week1/function/fun_exp.png]]
+
+* 建立公式
+
+** 举例：四周规则
+   1. 内容
+      - 价格突破四周高点的时候，做多；突破四周低点的时候，做空
+      - 如果时间周期是日线的话，四周对应 20 天
+   2. 代码
+      #+BEGIN_EXAMPLE
+        Params
+      	  Numeric Offset(2);
+      	  // Lots 默认值设为 0 的时候，表示这次买卖的手数由公式应用设置中某个选项决定
+      	  Numeric Lots(0);
+	
+        Vars
+      	  Numeric HiBand;
+      	  Numeric LoBand;
+
+        Begin
+      	  // 计算上轨和下轨通道
+      	  // 注意此处不用 HiBand = Highest(High, 20);
+      	  // 因为当前 K 线也包含在内，突破前 20 根 K 线高点永远无法满足
+      	  // 变通的做法，改为 HiBand = Highest(High[1], 20);
+      	  // 代表取前一根 K 线开始，往前 20 根 K 线的高点
+      	  HiBand = Highest(High[1], 20);
+      	  LoBand = Lowest(Low[1], 20);
+	 
+      	  // 简单交易指令 ：开多 Buy, 平多 Sell, 开空 SellShort, 平空 BuyToCover
+      	  // 复杂交易指令：A_SendOrder
+	
+      	  // 第一种写法：最高价突破上轨 If(High > HiBand)
+      	  // 为了避免连续加仓的情况，可以加入头寸控制，当没有开多的时候，开多
+      	  If(High > HiBand And MarketPosition <> 1)
+      	  {
+      		  // 注意价格合理性，有些价格不可能成交
+      		  // 最高价突破 HiBand 的时候，High 至少要比 HiBand 高一跳
+      		  // 这时不能说成交价就是 HiBand
+      		  // 如果价格突破上轨后，一路突破，没有机会以 HiBand 成交
+      		  // 至少要加上一跳，此时可以设置一个 Offset，考虑滑点因素
+      		  // 如果价格突破上轨时，有可能是从下面慢慢突破，也可能开盘跳空
+      		  // 开盘跳空的时候，就可以开盘价和考虑滑点后价格的最高价作为委托价
+      		  Buy(Lots, Max(Open, HiBand+Offset*MinMove*PriceScale));
+      	  }
+      	  // 另外一种写法： 最高价与上轨持平
+      	  //If(High >= HiBand)
+      	  //{
+      	  //	Buy(1, Max(Open, HiBand));
+      	  //}
+	
+      	  If(Low < LoBand And MarketPosition <> -1)
+      	  {
+      		  SellShort(Lots, Min(Low, LoBand-Offset*MinMove*PriceScale));
+      	  }
+        End
+      #+END_EXAMPLE
+ 
+* 批量优化
