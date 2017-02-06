@@ -50,7 +50,16 @@
    1. 内容
       - 价格突破四周高点的时候，做多；突破四周低点的时候，做空
       - 如果时间周期是日线的话，四周对应 20 天
-   2. 代码
+
+   2. 集合竞价过滤
+      #+BEGIN_EXAMPLE
+        If (CallAuctionFilter() == False) Return;
+      #+END_EXAMPLE
+      需要注意的是，TB内置的 CallAuctionFilter 仅处理 1、3、5、15、30分钟，1小时，日线，周线，月线等常用周期，
+      如果需要使用特殊周期，需要注意使用自己的集合竞价过滤函数，新版TB有处理任意周期的函数
+      `IsCallAuctionTime()`
+
+   3. 代码
       #+BEGIN_EXAMPLE
         Params
       	  Numeric Offset(2);
@@ -69,6 +78,9 @@
       	  // 代表取前一根 K 线开始，往前 20 根 K 线的高点
       	  HiBand = Highest(High[1], 20);
       	  LoBand = Lowest(Low[1], 20);
+          
+          // 集合竞价过滤
+          If(CallAuctionFilter() == False) Return;
 	 
       	  // 简单交易指令 ：开多 Buy, 平多 Sell, 开空 SellShort, 平空 BuyToCover
       	  // 复杂交易指令：A_SendOrder
@@ -98,5 +110,103 @@
       	  }
         End
       #+END_EXAMPLE
- 
-* 批量优化
+
+* 加载公式和设置交易属性
+
+  在图表中，右击鼠标，选择对应的商品设置和应用公式设置
+  注意：
+  - 默认值设置：应用公式设置 --> 图表交易设定
+
+* 性能测试
+  
+  [[file:week1/test_per/test_per_01.png]]
+
+  商品测试，测试周期，滑点，手续费，委托偏移(启动偏移后，按照真正的主力合约价格加上一定跳数成交)
+
+* 优化与批量优化
+
+  1. 参数优化
+     [[file:week1/para_opt/para_opt_01.PNG]]
+
+  2. 在公式中设置参数优化范围，步长
+
+  3. 批量处理
+     1. 批量设置
+        [[file:week1/para_opt/para_opt_05.PNG]]
+
+     2. 将当前图标公式应用到其他工作区
+        - 将当前公式另存为模板
+          [[file:week1/para_opt/para_opt_06.PNG]]
+          [[file:week1/para_opt/para_opt_07.PNG]]
+        - 批量设置，应用模板
+     3. 批量优化
+        - 方式一： 
+          优化窗口 --> 加入队列 --> 批量优化
+          1. 参数优化 
+             [[file:week1/para_opt/para_opt_02.PNG]] 
+          2. 加入队列
+             [[file:week1/para_opt/para_opt_03.PNG]] 
+          3. 批量优化
+             [[file:week1/para_opt/para_opt_04.PNG]]
+        - 方式二：
+          [[file:week1/para_opt/para_opt_04.PNG]]
+          可以将当前所有工作区的内容加入到队列中，然后选择想要批量优化的内容
+
+* 自动选参数
+
+   [[file:week1/auto_para/auto_para_01.PNG]]
+   [[file:week1/auto_para/auto_para_02.PNG]]
+   
+   缺点：仅对当前品种效果表现好，可能过拟合
+
+* 多品种组合优化
+  
+  希望找到一个参数，在所有品种上表现都好
+  
+  1. 打开多品种图标
+  2. 添加公式
+  3. 参数优化
+
+* 开启自动交易
+
+   [[file:week1/auto_trade/auto_trade_01.PNG]]
+
+* 头寸监控和交易助手
+  
+  计算机问题或网络问题，可能导致交易失败，为了保证交易安全稳定，需要打开头寸监控和交易助手
+  
+  头寸监控处理的是，发单不成功的情况
+
+  1. 头寸监控
+     查询 --> 检查点(账户仓-系统仓，理论上策略应该有的仓位=手工仓) --> 一键同步
+  2. 自动同步设置
+     同步设置，可以将手工仓设为自动同步
+
+  如果发单了，但是没有成交，此时需要交易助手
+
+  1. 撤单设置
+     发单后，如果成交价离我的价格太远，可以设置撤单
+
+* 资金曲线
+
+  资金曲线的相关设置，可以在页面设置中看到；区域报告；
+
+  设置不同品种，不同权重下的资金曲线图
+  1. 新建工作区
+  2. 图表类型设置资金曲线
+  3. 设置数据源
+  4. 添加品种
+  5. 不同品种的权重
+
+* 辅助功能
+  
+  1. 消息中心
+  2. 行情测速与切换 --> 图标右下角
+  3. 行情故障自动切换
+  4. 行情自动刷新
+  5. 风控 系统设定 --> 交易 
+  
+  [[file:week1/assistant/assitant_01.png]]
+        
+
+
