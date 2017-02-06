@@ -1,0 +1,315 @@
+#+TITLE: TB 共学计划第二周
+#+AUTHOR: 胡琛
+
+
+* TB 公式
+
+ 
+** 初步认识 TB 公式
+   1. 什么是 TB 公式
+
+   2. TB 公式的类型
+
+      - 公式应用
+
+      - 用户函数
+
+   3. 如何查看 TB 公式
+
+   4. TB 公式的一般结构
+      #+BEGIN_EXAMPLE
+        Params
+          ...
+          ...
+
+        Vars
+          ...
+          ...
+
+        Begin
+          ...
+          ...
+        End
+      #+END_EXAMPLE
+
+   
+** 通过实例了解 TB 公式运行机制 
+
+   1. 创建、编辑和编译 TB 公式
+
+   2. 举例：Welcome To TB
+
+   3. TB 公式的运行机制
+
+      - 基于图表运行
+        
+        - `FileAppend` 的使用
+           #+BEGIN_EXAMPLE
+             Begin
+               FileAppend("C:\\Users\\Curio\\demo_welcome.txt", "Welcome to TB!");
+             End
+           #+END_EXAMPLE
+
+      - 从左到右
+
+      - 公式在开市和闭市时运行的不同
+
+        - 开市状态下，在最新的一根 Bar 上公式会随着数据不断更新反复调用公式
+
+* TB 语法基础
+  
+** TBL 语言基本元素介绍
+   
+   - 保留字：TB 中有独特含义或用途的字符，主要指：
+     - 功能关键字、系统函数名、数据类型、数据源
+     - 操作符、标点符号
+   - 函数
+     - 实现一定功能的代码，分系统函数和用户函数
+   - 表达式
+     - 由常量、变量、操作符、函数和圆括号组成，通过运算能得到结果的式子，运算结果
+       的类型由数据和操作符共同决定
+   - 语句：符合 TBL 语言语法的一行命令，比如：赋值语句、控制语句、循环语句等
+
+** 命名规则
+   
+   1. 详细描述，在 TB 官网下载 TB 公式电子指南，可以看到详细的有关命名规则描述
+   2. 命名规则的一些要点：
+      - 不区分大小写
+      - 不能和系统保留字、C++关键字重名
+      - 名称只能使用字母、数字和下划线
+      - 长度不超过 32 个英文字符
+   3. 公式正文规则：
+      - 不区分大小写
+      - 公式语句以 ';' 结尾
+      - 公式中正文字符因含义不同，公式编辑器会以不同颜色加以区分
+
+** 标点符号含义
+   
+   | 符号  | 名称   | 说明                                     |
+   |-------+--------+------------------------------------------|
+   | ;     | 分号   | 表示当前语句的结束                       |
+   | ,     | 逗号   | 当函数带有多个参数时，用于分隔参数       |
+   | ()    | 小括号 | 设置初始值，限定函数参数，改变运算优先级 |
+   | ""    | 双引号 | 表示字符串常量                           |
+   | []    | 中括号 | 指定回溯读取的偏移量，指定数组元素下标   |
+   | {}    | 大括号 | 指定语句块的范围，即语句块的开始与结束   |
+   | .     | 点     | 表示数据源的数据调用                     |
+   | //    | 双斜杠 | 表示本命令行的之后部分为注释部分         |
+   | /* */ | 块注释 | 符号之间的部分是注释部分                 |
+
+** 操作运算符
+   
+   | 类别       | 运算符       | 说明         |
+   |------------+--------------+--------------|
+   | 算术运算符 | +            | 加           |
+   |            | -            | 减           |
+   |            | *            | 乘           |
+   |            | /            | 除           |
+   |            | %            | 求模(求余数) |
+   |------------+--------------+--------------|
+   | 关系运算符 | >            | 大于         |
+   |            | >=           | 大于等于     |
+   |            | <            | 小于         |
+   |            | <=           | 小于等于     |
+   |            | ==           | 等于         |
+   |            | !=或<>       | 不等于       |
+   |------------+--------------+--------------|
+   | 逻辑运算符 | And(&&)      | 与           |
+   |            | OR(两个竖线) | 或           |
+   |            | Not          | 非           |
+
+* 数据类型
+  
+** 数据类型
+   
+*** 基本类型
+    
+    - 三种基本数据类型
+      - 数值型 (Numeric)
+        - e.g. 10000, 20160808, 0.1415
+      - 字符串 (String)
+        - e.g. "EntryPrice=" , "Buy At 2085"
+      - 布尔型 (Bool)
+        - 布尔型只有两个取值：True 和 False
+        - 譬如：1000 > 900 , Close > Open
+
+*** 扩展类型
+    
+    - 序列类型 (Series)
+
+      - 和公式运行所在图表 K 线有密切关系，一一对应关系
+
+      - 可以回溯读取 
+        
+      - 变量的值系统会自动向下传递，确保序列变量在每根 K 线上都有一个有效值
+        
+        | 数值序列类型  | 字符串序列类型 | 布尔型序列类型 |
+        |---------------+----------------+----------------|
+        | NumericSeries | StringSeries   | BoolSeries     |
+    
+    - 引用类型
+
+      将来编写用户函数，可以用引用类型向用户函数传递参数，并且将用户函数中运算之后的结果，通过引用类型
+      返回给调用用户函数的函数
+
+      | 数值引用类型 | 字符串引用类型 | 布尔引用类型 |
+      |--------------+----------------+--------------|
+      | NumericRef   | StringRef      | BoolRef      |
+
+    - 数组类型 (Array)
+      
+      一些相同类型的变量或者数据，按照一定顺序排列在一起的集合，集合中的元素，可以通过编号访问，
+      方便用户对大批量同类型数据处理
+
+      | 数值型数组   | 字符串型数组 | 布尔型数组 |
+      |--------------+--------------+------------|
+      | NumericArray | StringArray  | BoolArray  |
+
+** 类型转换
+   
+   - 从一种基本数据类型转型为另一种基本数据类型
+   
+   - 类型转换必须在有意义的情况下进行
+     - e.g. "2000" 这个字符串转为数值：2000； "Buy Entry" 这个字符串转为数值，没有意义
+
+   - TBPlus 类型转换常用函数
+     
+     - 字符串转数值型： `Value`
+       
+       #+BEGIN_EXAMPLE
+         Numeric Value(String str)
+       #+END_EXAMPLE
+
+     - 数值型转字符串： `Text`
+
+       #+BEGIN_EXAMPLE
+         String Text(Numeric value)
+       #+END_EXAMPLE
+
+     - 布尔型转字符串： `IIFString`
+
+       #+BEGIN_EXAMPLE
+         String IIFString(Bool Condition, String TrueValue, String FalseValue)
+         // Condition 为条件表达式
+         // TrueValue 是条件为真时的返回值
+         // FalseValue 是条件为假时的返回值
+       #+END_EXAMPLE
+
+     - 布尔型转数值型： `IIF`
+       
+       #+BEGIN_EXAMPLE
+       Numeric IIF(Bool Condition, Numeric TrueValue, Numeric FalseValue)
+       // Condition 条件表达式
+       // TrueValue 条件为真时返回的数值
+       // FalseValue 条件为假时返回的数值
+       #+END_EXAMPLE
+
+* Bar 数据
+
+** Bar 数据基本概念
+   
+   - 图表中的商品在所选择的时间周期下的所有 K 线样本数据，按照时间从先到后的顺序排列而成的序列数据
+   
+   - Bar 数据是序列数据，序列数据支持回溯读取。具体使用方法：
+     - 变量名[偏移 Bar 数目] 或 函数名[偏移 Bar 数目]
+
+       
+** 序列数据与非序列数据区别
+
+   - 序列数据支持回溯读取
+     [[file:week2/bar_data/bar_data_01.PNG]]
+
+   - 非序列数据无法实现回溯读取
+     [[file:week2/bar_data/bar_data_02.PNG]]
+
+** 每根 Bar 包含哪些数据
+
+   | 函数名     | 简写 | 返回值                                                                                              |
+   |------------+------+-----------------------------------------------------------------------------------------------------|
+   | Date       | D    | 当前 Bar 的日期，返回值是整型数                                                                     |
+   | Time       | T    | 当前 Bar 的时间，返回值是小数                                                                       |
+   | Open       | O    | 当前 Bar 的开盘价                                                                                   |
+   | High       | H    | 当前 Bar 的最高价 (Tick 图，盘口的叫卖价，即委卖价)                                                 |
+   | Low        | L    | 当前 Bar 的最低价 (Tick 图，盘口的叫买价，即委买价)                                                 |
+   | Close      | C    | 当前 Bar 的收盘价 (开市期间最后一根 Bar 最新价)                                                     |
+   | Vol        | V    | 当前 Bar 的成交量                                                                                   |
+   | OpenInt    | 无   | 当前 Bar 的持仓量                                                                                   |
+   | CurrentBar | 无   | 当前 Bar 的索引值(编号),从图标最左边开始，从 0 开始计数                                             |
+   | BarStatus  | 无   | 当前 Bar 的状态值，0-图表中的第一根 Bar，2-图表中最后一根 Bar，也就是最新的一根 Bar，1-其他中间 Bar |
+* 使用 Bar 数据
+
+   1. Version1
+
+      #+BEGIN_EXAMPLE
+        Begin
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", "Welcome To TB");
+          // 添加当前 Bar 索引
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", CurrentBar);
+        End
+      #+END_EXAMPLE
+
+   2. Version2: Version1 编译出错，原因在于 `FileAppend` 函数接收的函数都是 =String= 类型，修改如下
+      #+BEGIN_EXAMPLE
+        Begin
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", "Welcome To TB");
+          // 添加当前 Bar 索引
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", Text(CurrentBar));
+        End
+      #+END_EXAMPLE
+
+   3. Version3:  将 Version2 修改，尝试 =String= 类型的拼接功能
+      
+      #+BEGIN_EXAMPLE
+        Begin
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", "Welcome To TB! 运行在第 "+Text(CurrentBar) 
+          + " 根 K 线上, BarStatus = " + Text(BarStatus));
+        End
+      #+END_EXAMPLE
+
+   4. Version4: 回溯读取 Bar 数据
+
+      #+BEGIN_EXAMPLE
+        Begin
+          FileAppend("C:\\Users\\Curio\\Downloads\\Demo_BarData.txt", "Welcome To TB! 运行在第 "+Text(CurrentBar) 
+          + " 根 K 线上, BarStatus = "+Text(BarStatus)+"Close = "+Text(Close)+"Close[2] = "+Text(Close[2]));
+        End
+      #+END_EXAMPLE
+
+* 参数
+
+** 概念
+
+   - 预先声明的地址，用于存放输入的值，声明后可以在公式中使用该参数名称引用其值
+
+   - 定义参数的好处：
+
+     - 修改参数而不许更改公式代码就可以使公式以不同状态运行
+
+     - 参数可以优化
+
+** 声明
+
+   - 声明方法
+
+     - 参数数据类型 参数名 (默认值);
+
+     - 参数数据类型 参数名 (默认值, 最小值, 最大值, 步长);
+
+     - 参数可声明的数据类型和公式类型有关
+
+       - 公式应用的参数只支持三种基本类型，而用户函数支持全部类型
+
+     - 参数值在公式内部不能被修改 (引用参数除外), 因此不能对参数进行赋值操作
+
+** 使用举例
+  
+   #+BEGIN_EXAMPLE
+     Params
+   	  Numeric Offset(3);
+
+     Begin
+   	  FileAppend("C:\\Users\\Curio\\Downloads\\Demo_Param.txt", "Close = " + Text(Close) + "Close[" + Text(Offset) + "] = "
+   	  + Text(Close[Offset]));	 
+     End
+   #+END_EXAMPLE
+* 变量
