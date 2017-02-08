@@ -313,3 +313,64 @@
      End
    #+END_EXAMPLE
 * 变量
+
+** 变量声明与赋值
+   
+   1. 存储值的地址，用于存放公式在运算过程中会发生改变的值，变量声明后就可以在公式中使用该变量进行操作
+
+   2. 定义变量的好处：
+
+      - 变量主要用于存储计算或比较的结果，之后的公式代码可以通过直接引用变量得到结果，无需
+        重现计算过程，提高执行效率
+
+      - 可高效地实现各种算法，提高代码可读性
+
+      - e.g. 计算最近 20 根 K 线的收盘价平均价
+        
+        #+BEGIN_EXAMPLE
+          sum = 0;
+
+          For i=0 To 20
+          {
+            sum = sum+C[i] 
+          }
+
+          ma = sum/20;
+        #+END_EXAMPLE
+
+   3. 声明方法
+      
+      - `变量类型 变量名 (默认值);`
+
+      - 变量可声明的类型： 除引用类型之外的其他数据类型
+
+   4. 变量赋值
+      
+      - `变量名 = 表达式;`
+
+      - 表达式的数据类型必须与变量数据类型一致
+
+** =Commentary= 函数的使用
+
+   1. 在当前 Bar 的输出信息中添加一行注释信息
+
+      #+BEGIN_EXAMPLE
+        Commentary(String strTip)
+      #+END_EXAMPLE
+
+   2. e.g. 判断是否三连阳
+      
+      #+BEGIN_EXAMPLE
+        Vars
+      	  Bool bPattern(False);
+
+        Begin
+
+      	  bPattern = Close > Open And Close[1] > Open[1] And Close[2] > Open[2];
+	
+      	  Commentary(IIFString(bPattern, "这是三连阳","这不是三连阳形态"));
+		
+        End
+      #+END_EXAMPLE
+   
+** 变量使用举例
