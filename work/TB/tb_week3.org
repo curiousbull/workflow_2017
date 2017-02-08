@@ -1,0 +1,43 @@
+#+TITLE: TB 共学计划第三周
+#+AUTHOR: 胡琛
+
+* 期货基础
+ 
+  1. 交易所
+
+  2. 交易品种
+   
+  3. 与股票区别
+
+* 000 和 888
+
+  1. 000 -- 商品指数
+
+     - 权重 = 持仓量/总合约持仓量
+
+     - 000对应的价格 = Sum(各合约价格x权重)
+
+     - 一般用于交易分析
+
+     - 并不完全代表主力合约走势，可能出现问题
+
+  2. 888 -- 主力连续
+     
+     - 一直映射当前主力合约，如果主力合约发生发生换月，888会按照一定规则，自动切换为主力合约
+
+     - 换月时可能发生跳空，程序化的时候需要考虑如何处理这种情况
+* TBL的三种数据
+ 
+  1. Numeric -- 作图
+     
+     #+BEGIN_EXAMPLE
+       Numeric PlotNumeric(String Name,Numeric Number,Numeric Locator=0,Integer Color=-1,Integer BarsBack=0)
+     #+END_EXAMPLE
+
+     - e.g.
+       #+BEGIN_EXAMPLE
+         PlotNumeric("收盘价与3370连线", Close, 3370);
+       #+END_EXAMPLE
+
+       设置了公式连线为柱状线
+       
