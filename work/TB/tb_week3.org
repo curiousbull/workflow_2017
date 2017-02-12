@@ -34,10 +34,46 @@
        Numeric PlotNumeric(String Name,Numeric Number,Numeric Locator=0,Integer Color=-1,Integer BarsBack=0)
      #+END_EXAMPLE
 
-     - e.g.
+     - =Name= 输出值的名称，不区分大小写；
+     - =Number= 输出的数值；
+     - =Locator= 输出值的定位点，默认时输出单点，否则输出连接两个值线段，用法请看例3；
+     - =Color= 输出值的显示颜色，默认表示使用属性设置框中的颜色；
+     - =BarsBack= 从当前Bar向前回溯的Bar数，默认值为当前Bar。 
+
        #+BEGIN_EXAMPLE
          PlotNumeric("收盘价与3370连线", Close, 3370);
        #+END_EXAMPLE
 
        设置了公式连线为柱状线
-       
+
+  2. String -- 作图
+
+     #+BEGIN_EXAMPLE
+       String PlotString(String Name,String str,Numeric Locator=0,Integer Color=-1,Integer BarsBack=0)
+     #+END_EXAMPLE
+
+     - =Name= 输出值的名称，不区分大小写；
+     - =str= 输出的字符串；
+     - =Locator= 输出值的定位点；
+     - =Color= 输出值的显示颜色，默认表示使用属性设置框中的颜色；
+     - =BarsBack= 从当前Bar向前回溯的Bar数，默认值为当前Bar。
+
+  3. Bool -- 作图
+
+     #+BEGIN_EXAMPLE
+       Bool PlotBool(String Name,Bool bPlot,Numeric Locator=0,Integer Color=-1,Integer BarsBack=0)
+     #+END_EXAMPLE
+
+     - =Name= 输出值的名称，不区分大小写；
+     - =bPlot= 输出的布尔值；
+     - =Locator= 输出值的定位点；
+     - =Color= 输出值的显示颜色，默认表示使用属性设置框中的颜色
+     - =BarsBack= 从当前Bar向前回溯的Bar数，默认值为当前Bar。
+     
+     #+BEGIN_EXAMPLE
+       PlotBool ("con",con,high); //在bar的最高价位置输出条件con的布尔值。
+       If (PlotBool ("con1",con1)) Alert("con1 is true"); //输出con1的值，并且当con1条件满足时，进行报警。 
+     #+END_EXAMPLE
+* If Else分支语句与循环语句
+* 用户函数编写
+* 全局变量
