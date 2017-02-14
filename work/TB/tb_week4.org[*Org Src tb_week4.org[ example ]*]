@@ -1,0 +1,22 @@
+Params
+  Numeric Length(10);
+
+Vars
+  NumericSeries Ema(0);
+  NumericSeries Eema(0);
+  NumericSeries my_Dema(0);
+  Numeric Alpha(0);
+
+Begin
+  If(CurrentBar == 0)
+  {
+    Ema = Close;
+    Eema = Close;
+  }Else{
+    Alpha = 2/(1+Length);
+    Ema = Alpha * Close + (1-Alpha)*Ema[1];
+    Eema = Alpha * Ema + (1-Alpha)*Eema[1];
+    my_Dema = 2* Ema - Eema;
+  }
+  PlotNumeric();
+End
