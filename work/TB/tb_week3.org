@@ -76,4 +76,116 @@
      #+END_EXAMPLE
 * If Else分支语句与循环语句
 * 用户函数编写
+  1. 举例：计算10周期收盘价的平均值
+
+     - 新建一个新的函数，函数名可以设为 =func_test=
+
+     #+BEGIN_EXAMPLE
+       Params
+         NumericSeries Price(0);
+         Numeric length(10);
+
+       Vars
+         Numeric Sum(0);
+         Numeric i(0);
+
+       Begin
+         For i = 0 To length-1
+         {
+           sum = sum + Price[i];
+         }
+
+         Return sum/length;
+       End
+     #+END_EXAMPLE
+
+     编译成功后，在公式应用中直接调用函数即可
+     #+BEGIN_EXAMPLE
+       Commentary("Avg Close:"+Text(func_test(Close, 10)));
+     #+END_EXAMPLE
+
+  2. 关于 'NumericRef' 的使用
+     
+     - 如果在函数中希望能返回多个参数，可以使用 'NumricRef'
+
+     - 譬如，上例中，不仅希望返回平均值，还希望返回收盘价之和，可以对函数进行修改
+       
+       #+BEGIN_EXAMPLE
+         Params
+                  NumericSeries Price(0);
+                  Numeric length(10);
+                  NumericRef Sumat; // 注意，引用型参数，不能赋初值
+
+                Vars
+                  Numeric Sum(0);
+                  Numeric i(0);
+
+                Begin
+                  For i = 0 To length-1
+                  {
+                    sum = sum + Price[i];
+                  }
+                  Summat = sum;
+
+                  Return sum/length;
+                End
+       #+END_EXAMPLE
+
+     - 相应的，公式调用函数方法
+
+       #+BEGIN_EXAMPLE
+         Vars 
+           Numeric Sum(0);
+
+         Begin
+           Commentary("Avg Close: "+Text(func_test(Close, 10, Sum);
+           Commentary("Sum: " + Text(Sum));
+         End
+       #+END_EXAMPLE
+
 * 全局变量
+  
+     - 简单变量
+       
+       仅在当根 Bar 上有效
+
+     - 序列变量
+
+       值可以传递，如果当根 Bar 没有做运算，值会从上根 Bar 上传下来，每根 Bar 上都有值，这些 Bar 的值集合作为一个变量
+       称为序列变量
+       
+     - 数组变量
+
+       在每根 Bar 上都有很多值，用下标取值
+
+     - 全局变量
+
+       独立于 K 线之外的变量，仅有一个值
+
+     - 注意数组变量于序列变量的区别
+
+     - e.g.
+
+       #+BEGIN_EXAMPLE
+         Params
+           Numeric a;
+           NumericSeries b;
+           NumericArray arr;
+
+         Begin
+           If(BarStatus == 0)
+           {
+             a = 1;
+             b = 1;
+             arr[1] = 2;
+             arr[2] = 3;
+             SetGlobalVar(0, a); // 全局变量一共可以设置255个，这里设置第一个全局变量值为 a
+           }
+           Commentary("a = " + Text(a));
+           Commentary("b = " + Text(b));
+           Commentary("arr[1] = " + Text(arr[1]));
+           Commentary("arr[2] = " + Text(arr[2]));
+           Commentary("globalVar 0 = " + Text(GetGlobalVar(0))); // 获取第一个全局变量值
+         End
+       #+END_EXAMPLE
+
