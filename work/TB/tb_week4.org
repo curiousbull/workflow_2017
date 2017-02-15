@@ -136,3 +136,105 @@
          PlotNumeric("DEMA", my_DEMA, 0, Blue);
        End
      #+END_EXAMPLE
+* MACD（指数平滑移动平均线）
+  
+  1. 说明
+     
+     从双指数移动平均线发展而来，由快的指数移动平均线 (EMA12) 减去慢的指数移动平均线 (EMA26) 得到
+     快线 DIF, 再用 2x(快线 DIF-DIF 的 9 日加权移动平均线 DEA) 得到 MACD 柱，即，由快、慢均线
+     的离散、聚合表征当前的多空状态和股价可能的发展变化趋势，但阅读起来更加方便。当 MACD 由负数转向
+     正数，是买的信号，当 MACD 由正数转为负数，是卖的信号。当 MACD 以大角度变化，表示快的移动平均线
+     和卖的移动平均线的差距非常迅速地拉开，代表了一个市场大趋势的转变。
+
+  2. 源码
+
+     #+BEGIN_EXAMPLE
+       Params
+     	  Numeric FastLength(12);
+     	  Numeric SlowLength(26);
+     	  Numeric MACDLength(9);
+
+       Vars
+     	  Numeric Dif;
+     	  Numeric MACD;
+     	  Numeric EmaDif;
+
+       Begin
+     	  Dif = XAverage(Close, FastLength) - XAverage(Close, SlowLength);
+     	  EmaDif = XAverage(Dif, MACDLength);
+     	  MACD = Dif - EmaDif;
+     	  PlotNumeric("Dif", Dif);
+     	  PlotNumeric("EmaDif", EmaDif);
+     	  If(MACD > 0){
+     		  PlotNumeric("MACD", MACD, 0, Red);
+     	  }Else{
+     		  PlotNumeric("MACD", MACD, 0, Green);
+     	  }
+     	  PlotNumeric("0 轴", 0, 0);
+       End
+     #+END_EXAMPLE
+* KDJ (随机指标)
+  
+  1. 说明
+
+     KDJ 又称随机指标，最早以 KD 指标形式出现，而 KD 指标又是在威廉指标的基础上
+     发展而来，目前是金融市场上常用的技术分析工具之一。
+   
+     K, D 指标实在 WMS 的基础上发展起来的，所以 K, D 指标是 WMS 的一些特性。在
+     反映股市价格变化时，J 最快，K 指标其次，D 指标最慢。K 指标反应敏捷，但容易
+     出错；D 指标反映稍慢，但稳重可靠。
+
+  2. 计算方法
+     
+     1. 首先计算周期内的 RSV 值，即未成熟随机指标值，然后再计算 K 值，D 值，J 值。
+
+        #+BEGIN_SRC latex
+          \begin{equation}
+            n 日 RSV = (C_n - L_n)/(H_n - L_n)\times 100
+          \end{equation}
+        #+END_SRC
+
+        即，N 日内的 RSV 值等于这段周期内，最新的一根 Bar 的收盘价-周期内最低价，然后除以
+        周期内最高价-周期内最低价的值。
+
+        可以看出，RSV 越小，越接近最低价，RSV 值越大，则越接近最高价。
+
+     2. 计算 K、D 值
+
+        #+BEGIN_SRC latex
+          \begin{eqnarray}
+            当日 K 值 &=& \frac{2}{3}前一日 K 值+\frac{1}{3}当日 RSV\\
+            当日 D 值 &=& \frac{2}{3}前一日 D 值+\frac{1}{3}当日 K 值
+          \end{eqnarray}
+        #+END_SRC
+
+        如果前一日 K、D 值，则可分别用 50 来代替。
+
+     3. 计算 J 值
+        
+        #+BEGIN_SRC latex
+          \begin{equation}
+            J 值 = 3\times 当日 K 值-2\times 当日 D 值
+          \end{equation}
+        #+END_SRC
+* 唐奇安通道
+
+  1. 说明
+
+     由 Richard Donchian 发明，由三条不同颜色的线组成，该指标用周期内的最高价
+     和最低价来显示市场价格的波动性，当其通道窄时表示市场波动较小，反之，通道宽表示
+     市场波动比较大。
+
+     具体而言，当价格冲破上轨时是可能的买信号，突破下轨则是对应的卖信号。当时由于曲线
+     是由最高价和最低价计算出来的，价格很少突破上下轨道线，多数实在轨道之间运动，因此
+     建议配合其他指标一起使用。
+
+  2. 计算公式
+
+     #+BEGIN_SRC latex
+       \begin{eqnarray}
+         上线 &=& Max(最高价,n)\\
+         下线 &=& Min(最低价,n)\\
+         中线 &=& (最高价+最低价)/2
+       \end{eqnarray}
+     #+END_SRC
