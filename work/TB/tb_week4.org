@@ -136,3 +136,272 @@
          PlotNumeric("DEMA", my_DEMA, 0, Blue);
        End
      #+END_EXAMPLE
+
+* MACD（指数平滑移动平均线）
+  
+  1. 说明
+     
+     从双指数移动平均线发展而来，由快的指数移动平均线 (EMA12) 减去慢的指数移动平均线 (EMA26) 得到
+     快线 DIF, 再用 2x(快线 DIF-DIF 的 9 日加权移动平均线 DEA) 得到 MACD 柱，即，由快、慢均线
+     的离散、聚合表征当前的多空状态和股价可能的发展变化趋势，但阅读起来更加方便。当 MACD 由负数转向
+     正数，是买的信号，当 MACD 由正数转为负数，是卖的信号。当 MACD 以大角度变化，表示快的移动平均线
+     和卖的移动平均线的差距非常迅速地拉开，代表了一个市场大趋势的转变。
+
+  2. 源码
+
+     #+BEGIN_EXAMPLE
+       Params
+     	  Numeric FastLength(12);
+     	  Numeric SlowLength(26);
+     	  Numeric MACDLength(9);
+
+       Vars
+     	  Numeric Dif;
+     	  Numeric MACD;
+     	  Numeric EmaDif;
+
+       Begin
+     	  Dif = XAverage(Close, FastLength) - XAverage(Close, SlowLength);
+     	  EmaDif = XAverage(Dif, MACDLength);
+     	  MACD = Dif - EmaDif;
+     	  PlotNumeric("Dif", Dif);
+     	  PlotNumeric("EmaDif", EmaDif);
+     	  If(MACD > 0){
+     		  PlotNumeric("MACD", MACD, 0, Red);
+     	  }Else{
+     		  PlotNumeric("MACD", MACD, 0, Green);
+     	  }
+     	  PlotNumeric("0 轴", 0, 0);
+       End
+     #+END_EXAMPLE
+* KDJ (随机指标)
+  
+  1. 说明
+
+     KDJ 又称随机指标，最早以 KD 指标形式出现，而 KD 指标又是在威廉指标的基础上
+     发展而来，目前是金融市场上常用的技术分析工具之一。
+   
+     K, D 指标实在 WMS 的基础上发展起来的，所以 K, D 指标是 WMS 的一些特性。在
+     反映股市价格变化时，J 最快，K 指标其次，D 指标最慢。K 指标反应敏捷，但容易
+     出错；D 指标反映稍慢，但稳重可靠。
+     
+  2. 计算方法
+     
+     1. 首先计算周期内的 RSV 值，即未成熟随机指标值，然后再计算 K 值，D 值，J 值。
+
+        #+BEGIN_SRC latex
+          \begin{equation}
+            n 日 RSV = (C_n - L_n)/(H_n - L_n)\times 100
+          \end{equation}
+        #+END_SRC
+
+        即，N 日内的 RSV 值等于这段周期内，最新的一根 Bar 的收盘价-周期内最低价，然后除以
+        周期内最高价-周期内最低价的值。
+
+        可以看出，RSV 越小，越接近最低价，RSV 值越大，则越接近最高价。
+
+     2. 计算 K、D 值
+
+        #+BEGIN_SRC latex
+          \begin{eqnarray}
+            当日 K 值 &=& Avg(RSV, 3)\\
+            当日 D 值 &=& Avg(K, 3)
+          \end{eqnarray}
+        #+END_SRC
+
+        如果前一日 K、D 值，则可分别用 50 来代替。
+
+     3. 计算 J 值
+        
+        #+BEGIN_SRC latex
+          \begin{equation}
+            J 值 = 3\times 当日 K 值-2\times 当日 D 值
+          \end{equation}
+        #+END_SRC
+          
+  3. 解读
+    
+     由于 $K_0=\frac{R_2+R_1+R_0}{3}, D_0=\frac{K_2+K_1+K_0}{3}$，又由于 $J_0 = 3K_0 - 2D_0$,
+     可以推出 $J_0 = (7R_0+5R_1+3R_2-4R_3-2R_4)/9$, 可见，对于 $J$ 的计算，近期的 RSV 值对其影响越大。
+     另外，由于 RSV 的取值在 0 到 +100 之间，由此可以得到 J 的取值范围在 -66.67 到 +166.67 之间，在该取值
+     范围内，如果取黄金分割点， 值分别在 20 和 80 左右，再加上考虑到 20/80 法则(RSV 取极值 100 和 0 的时候，
+     J 取值为 0 到 100)，又是在三分位上，因此，可以取
+     20 和 80 作为指标分割线。
+
+     #+BEGIN_QUOTE
+     为什么 J 要用 3*K-2*D？K 和 D 为什么要用 3 天平均？RSV 为什么要选取 9 日内？RSV 权重，依次为 7、5、3、4、2，
+     被减数是奇数权重，减数是偶数权重，为什么？简单一句话——自然数列，任何指标参数，包括 KDJ 在内，不能随便改，或者说，
+     如果要改，得保证 RSV 都取极值时，J 值等于 100 或 0。这些常用指标参数都是经过数十年市场检验，不断优化，最后确定下来的，
+     已经是最优选择了。
+
+     作者：何子垠
+     链接：https://www.zhihu.com/question/27652388/answer/37491605
+     来源：知乎
+     著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+     #+END_QUOTE
+
+  5. 举例
+
+     [[file:week4/kdj_demo.jpg]]
+     
+     #+BEGIN_QUOTE
+     作者：何子垠
+     链接：https://www.zhihu.com/question/27652388/answer/37491605
+     来源：知乎
+     著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+     看图中的例子。L1505 合约开始后，伴随 1501 继续缓慢上涨，一根大阳突破 10700 平台上沿，
+     J 值超过 100，行情是继续涨呢，还是要回调呢？在短期（KDJ 截取周期）内，价格总体是不断走高的，
+     J 值也随价格的升高，而不断走高，没有出现背离。当 J 值超过 80 以上，进入超买区。啥叫超买？
+     买的人多。为什么买的人多？因为看涨。此时最有可能的行情是什么？多头趋势延续。K 线突破平台，多头信号，
+     J 值进入超买区，就是绝佳多单进场点。
+
+     当 K 线创出阶段新高后（比如图中涨到 11150，接近重要关口 11225 附近），
+     出现滞涨，K 线有小幅回落，此时观察 KDJ。J 值迅速下落直到接近 0 线，而 K 线价格仍在前期平台 10700 以上并稳住，
+     那么，KDJ 与 K 线的背离就出来了，多头强势，J 值回落表明短线获利盘跑了，这是洗筹的过程。此时，利用 J 值进入超卖区进场做多，
+     以跌破前平台上沿为止损，也是绝佳的机会。
+
+     随后，K 线再创高点 11220，非常接近 11225。重要关口位，一定要谨慎对待，可以突破，
+     也可以被压制，观察此时的 KDJ。J 值在高点又达到了 100。在 11150-11220 这段，高点没有明显差别，且数个低点也没有明显差别，
+     震荡幅度在不断加大，此时 J 值进入超买区，就真的是超买了，因为短期（KDJ 截取周期）内，趋势是震荡。且对比 11220 和 11500
+     时的 J 值，价格创新高，但 J 值没有创新高，背离出来了。对于中长线多头，当高点接近重要关口时，要做相应准备。
+     能不能突破关口不知道，但一定要防关口的压制，所以在高位，要么减仓，要么锁上，没突破关口就不能加多单。
+
+     再向后看，K 线受关口压制下跌，之后反弹，高点没有创新高，与 11150 持平，且比 11150-11220 间的高点 11200 低，
+     J 值也比 11200 对应的值低，短期内仍是震荡且有由多转空的节奏，那就空呗。后市下跌后反弹至 11055，高点依次降低，
+     对应的 J 值也依次降低，且在超买区，继续空。当然这中间的反弹也可以用 J 值与 K 线的背离来抓，比如从下跌至 10670 时，
+     K 线创短期新低，但 J 值大于前低，背离出现，可抓反弹，因为短期是震荡市。
+
+     总结一下：所谓趋势延续，是当下你要进场的位置前，
+     总体走势是上涨或下跌的，当 J 值进入超买超卖区时，表明当前市场集中了大量的顺势动能，并且即将释放，选一个 K 线上比较安全的位置 -- 突破，
+     或回撤后顺原趋势运行时进场，就是绝佳的搭顺风车的机会。如果进场前，趋势是震荡，那么 J 值在超买超卖区，就是绝佳的反手机会，而不是顺势，
+     因为短期根本就没有趋势可言。KDJ 在短期趋势运行的过程中，J 值超买超卖区，表示趋势继续延续；在 20-80 间利用位置关系，背离关系，顺势加仓或抓回撤
+     （在 20-80 间的数值要一视同仁，50 这个数没什么太大意义）。在短期震荡市中，J 值超买超卖，表明可抓反手；在 20-80 间，同样利用位置关系，
+     背离关系做加仓，抓回撤动作。所以一定要理解指标的含义，看当前短期内的 K 线走势，而不是见到超买超卖就反手，不能教条。
+     #+END_QUOTE
+
+* 唐奇安通道
+
+  1. 说明
+
+     由 Richard Donchian 发明，由三条不同颜色的线组成，该指标用周期内的最高价
+     和最低价来显示市场价格的波动性，当其通道窄时表示市场波动较小，反之，通道宽表示
+     市场波动比较大。
+
+     具体而言，当价格冲破上轨时是可能的买信号，突破下轨则是对应的卖信号。当时由于曲线
+     是由最高价和最低价计算出来的，价格很少突破上下轨道线，多数实在轨道之间运动，因此
+     建议配合其他指标一起使用。
+
+  2. 计算公式
+
+     #+BEGIN_SRC latex
+       \begin{eqnarray}
+         上线 &=& Max(最高价,n)\\
+         下线 &=& Min(最低价,n)\\
+         中线 &=& (最高价+最低价)/2
+       \end{eqnarray}
+     #+END_SRC
+* 布林通道(Bollinger Band)交易系统
+  
+  1. 说明
+     
+     布林线是根据统计学中的标准差原理设计出来的一种非常实用的技术指标。它由三条轨道线组成，其中
+     上下两条线分别可以看成是价格的压力线和支撑线，在两条线之间是一条价格平均线，一般情况价格线
+     是在由上下轨道组成的带状区间内游走，而且随价格变动而自动调整轨道的位置。当波带变窄时，激烈的
+     价格波动有可能随机产生，若高低点穿越边线时，立刻又回到波带内，则会有回档产生。
+
+     布林线在中间的通常为 20 天平均线，而在上下的两条线则分别为 Up 线和 Down 线，算法首先是通过
+     计算出过去 20 日收盘价的均价和标准差，Up 线是 20 均线加上 2 倍标准差，Down 线是 20 日均线
+     减去 2 倍标准差。
+
+  2. 计算公式
+
+     #+BEGIN_SRC latex
+       \begin{eqnarray}
+         中间线 &=& 20 日均线\\
+         Up 线 &=& 20 日均线 + 2\sigma\\
+         Down 线 &=& 20 日均线 -2\sigma
+       \end{eqnarray}
+     #+END_SRC
+
+  3. 进出场规则
+
+     - 进场
+       
+       + 上一根 Bar 的收盘价突破上一根 Bar 的上轨，做多，默认手数，当前 Bar 开盘价发单
+
+       + 上一根 Bar 的收盘价突破上一根 Bar 的下轨，做空，默认手数，当前 Bar 开盘价发单
+
+     - 出场
+
+       + 无论多单空单，价格回落至中轨，平仓，当前 Bar 开盘价平仓。
+
+  4. 源码
+
+     #+BEGIN_EXAMPLE
+       Params
+     	  Numeric Length(20);
+     	  Numeric Offset(2);
+	
+       Vars
+     	  NumericSeries MidLine(0);
+     	  NumericSeries UpLine(0);
+     	  NumericSeries DownLine(0);
+
+       Begin
+     	  MidLine = Average(Close, Length);
+     	  UpLine = MidLine+Offset*StandardDev(MidLine,Length,2);
+     	  DownLine = MidLine-Offset*StandardDev(MidLine,Length,2);
+     	  PlotNumeric("UpLine", UpLine);
+     	  PlotNumeric("DownLine", DownLine);
+     	  PlotNumeric("MidLine", MidLine);
+	
+     	  // 入场条件
+     	  If(Close[1] > UpLine[1]) Buy(0, Open);
+     	  If(Close[1] < DownLine[1]) SellShort(0, Open);
+	
+     	  // 出场条件
+     	  If(MarketPosition == 1 And Low[1] < MidLine[1]) Sell(0, Open);
+     	  If(MarketPosition == -1 And High[1] > MidLine[1]) BuyToCover(0, Open);
+       End
+     #+END_EXAMPLE
+
+     [[file:week4/bolling_band_v1.png]]
+
+     但是，如上图所示，如果允许连续建仓，可能出现问题。因此，可以改进如下，加入对当前仓位的判断，
+     只有当前没有持仓才会开仓。
+
+     #+BEGIN_EXAMPLE
+       Begin
+     	  MidLine = Average(Close, Length);
+     	  UpLine = MidLine+Offset*StandardDev(MidLine,Length,2);
+     	  DownLine = MidLine-Offset*StandardDev(MidLine,Length,2);
+     	  PlotNumeric("UpLine", UpLine);
+     	  PlotNumeric("DownLine", DownLine);
+     	  PlotNumeric("MidLine", MidLine);
+	
+     	  // 入场条件
+     	  If(Close[1] > UpLine[1] And MarketPosition <> 1) Buy(0, Open);
+     	  If(Close[1] < DownLine[1] And MarketPosition <> -1) SellShort(0, Open);
+	
+     	  // 出场条件
+     	  If(MarketPosition == 1 And Low[1] < MidLine[1]) Sell(0, Open);
+     	  If(MarketPosition == -1 And High[1] > MidLine[1]) BuyToCover(0, Open);
+       End
+     #+END_EXAMPLE
+
+     得到下图
+
+     [[file:week4/bolling_band_v2.png]]
+
+  5. 其他改进方向
+
+     1. 假信号
+        如果布林通道没有经历一个先窄后宽的过程，那么突破上轨很可能就是一个假信号，可以加入一些
+        过滤条件，过滤掉震荡行情。
+
+     2. 加入止盈
+
+     3. 信号闪烁问题
+        如果我们不用前一根 Bar 的信息来进行开平仓判断，而是使用盘中 Bar 信息进行开平仓判断，譬如
+        盘中价格突破上轨就做多，但是有可能收盘的时候这个 Bar 的收盘价在轨道区间内，这个就是信号闪烁。
