@@ -121,9 +121,6 @@
 
           - 最佳开仓价：建仓后浮动亏损最大的价格 --> 就是最差平仓价
 
-* 
-* 
-
 * 优化
   
   1. 优化目标
@@ -167,3 +164,177 @@
        这样，每次发单都会偏移 x 跳进行发单，不一定会以委托的价格成交，
        按实际撮合交易价格为准，譬如，发单价格比委卖价高，那么交易所会
        以委卖价进行撮合成交。
+* 发单价格偏移 
+
+  1. 说明
+
+     - 发单不准确是程序化交易者在刚开始学习编写模型时常犯的一个错误。
+
+     - 发单价格不准确发生原因往往是因为发单价格和触发交易条件的价格不一样。
+      
+     - 偷价属于发单价格不准确的一部分，但是偷价和实盘交易没有关系，仅仅体现在测试报告中,
+       在 If 语句中，如果逻辑判断条件和发单价格逻辑没有关联或者逻辑错误，可能造成发单
+       价格不准确。
+
+     - 在测试报告中看不出来，只能实盘模拟，比较交易记录才能看出问题发生在哪里。
+
+     - 短线中高频的交易策略如果发生偷价，往往非常致命。
+
+  2. 示例
+
+     #+BEGIN_EXAMPLE
+       MidLine = Average(Close, Length);
+       Band = StandardDev(Close, Length, 2);
+       UpBand = MidLine + Offset*Band;
+       DownBand = Midline - Offset*Band;
+
+       PlotNumeric("MidLine", MidLine);
+       PlotNumeric("UpBand", UpBand);
+       PlotNumeric("DownBand", DownBand);
+     #+END_EXAMPLE
+
+     1. 震荡反手开仓
+
+        如果是在震荡势中，我们认为，当价格突破下轨后，很大概率后市价格会回到中轨，反之，当价格突破上轨后，
+        价格会回落到中轨。
+
+        下面的代码会出现偷价问题：
+
+        #+BEGIN_EXAMPLE
+        	  // 反手写法，突破上轨，开空单，突破下轨，开多单
+        	  If(High > UpBand[1] And MarketPosition <> -1){
+        		  SellShort(0, Close); // 最新价发单，close 既是收盘价，在当前 Bar 柱又是最新价
+        	  }
+        	  If(Low < DownBand[1] And MarketPosition <> 1){
+        		  Buy(0, Close);
+        	  }
+        #+END_EXAMPLE
+
+        [[file:week5/bolling_backhand.png]]
+        
+        在图中绿色箭头位置是模拟盘中实际应该发单价格，但是回测报告中，用的是收盘价，即红色箭头位置，这就造成了
+        偷价格。
+
+     2. 趋势突破平仓条件
+        
+        #+BEGIN_EXAMPLE
+          // 持有多仓，且最低价突破中轨，以最新价平仓
+          If(MarketPosition == 1 And Low < MidLine){
+              Sell(0, Close);
+          }
+
+          // 持有空仓，且最高价突破中轨，以最新价平仓
+          If(MarketPosition == -1 And High > MidLine)
+          {
+              BuyToCover(0, Close);
+          }
+        #+END_EXAMPLE
+
+        上述代码同样会造成偷价问题。
+
+        如果将上述代码改为与前一根 Bar 的价格比较
+
+        #+BEGIN_EXAMPLE
+          // 持有多仓，且最低价突破中轨，以最新价平仓
+          If(MarketPosition == 1 And Low < MidLine[1]){
+              Sell(0, MidLine[1]);
+          }
+
+          // 持有空仓，且最高价突破中轨，以最新价平仓
+          If(MarketPosition == -1 And High > MidLine[1])
+          {
+              BuyToCover(0, MidLine[1]);
+          }
+        #+END_EXAMPLE
+
+        同样会有问题，假如前一根 Bar 的 MidLine 价格是 10，我当前的 Low 是 9，那么满足 'Low < MidLine[1]' 了，
+        此时，我以前一根 Bar 的 MidLine 价格试图卖出，回测中是可以卖的，但是，实盘中，Low 都已经小于 10 了，还以 10
+        的加个挂卖单，很明显会卖不出去。
+
+  3. 其他可能的偷价情况
+
+     1. 跳空
+
+        如果以当前 Bar 柱的价格作为条件判断分支语句，出现跳空的时候，很可能会出现偷价格问题。
+* 信号闪烁
+  
+  1. 说明
+
+     盘中模拟或者实盘交易的时候，有时候公式会遇到开平仓信号在最新 Bar 上时有时无的情况。这种情况我们称为
+     信号闪烁，造成这种问题原因：
+     
+     当我们用 IF 分支语句作为交易动作的一个条件判断时，如果 IF 后面的 Bool 值和 High, Low, Close, Vol,
+     Openint 等这些在盘中变化的值有关，那么就会很容易造成信号闪烁。
+
+     最直接的解决办法：条件判断都用历史数据，不用盘中的实时数据。
+
+  2. 查看信号闪烁方法
+
+     跑模拟盘，看委托记录，注意查看价格
+
+* 使用序列函数的注意事项
+  
+  1. 说明
+
+     - TBL 的计算机制：对于用 AND 连接的 BOOL 值，依次连接连接项的值，如果判断到 FALSE， 
+       如果判断到 FALSE, 那么直接返回 FALSE, 不再计算后面连接项的值。
+
+     - 什么是序列函数
+
+       类似与序列变量，该函数是可以回溯的，需要在历史 BAR 上保存相应的值。
+
+       - e.g. BarCount 返回当前公式应用在指定图层上的 Bar 总数；CurrentBar 返回当前公式应用在指定
+         图层上的当前 Bar 的索引值。
+
+  2. 一个容易出错的地方举例
+
+     #+BEGIN_EXAMPLE
+       Vars
+         BoolSeries Condition1;
+         BoolSeries Condition2;
+
+         NumericSeries MacdDiff(0);
+         NumericSeries MacdValue(0);
+         NumericSeries AvgMacd(0);
+
+         BoolSeries Cond1;
+
+       Begin
+
+         MacdValue = XAverage(Close, FastLength) - XAverage(Close, SlowLength);
+         AvgMacd = XAverage(MacdValue, MacdLength);
+         MacdDiff = MacdValue - AvgMacd;
+
+         Condition1 = MacdDiff[1] > 0 And CrossOver(MacdValue[1], AvgMacd[1]);
+         Condition2 = CrossOver(MacdValue[1], AvgMacd[1]) And MacdDiff[1] > 0;
+
+         PlotBool("Condition1", Condition1, Low);
+         PlotBool("Condition2", Condition2, High);
+     #+END_EXAMPLE
+
+     逻辑上而言， 'Condition1' 应该与 'Condition2' 的值一样，但是会有差别，原因在于 =CrossOver= 这个函数是
+     返回值是 BoolSeries, 又因为 TB 默认两个 Bool 类型连接时，第一项是 False，第二项不会再计算，直接返回 False，
+     这会碰到一种情况，某连续两根 Bar，第一根 Bar 满足 MacdDiff[1] > 0, 但是 CrossOver(MacdValue[1], AvgMacd[1]) 是 False,
+     第二根 Bar 时 MacdDiff[1] > 0 是 False，则直接返回 False, 此时，语句 CrossOver(MacdValue[1], AvgMacd[1]) 不会
+     运行，则尽管此时实际情况是 CrossOver(MacdValue[1], AvgMacd[1]) 为 True，但因为这个语句没有运行，则默认
+     其结果是 False，这样，到了第三根 Bar，如果两个条件都是 True 的话，那么 Condition2 返回是 True，而 Conditon1
+     的结果却是 False.
+
+  3. 另一个示例
+
+     假如当前 K 线图由 300 根 K 线，我想要在每根 K 线上打印出当前 Bar 柱的索引，只需要用 'CurrentBar' 即可，但是，假如我采用
+     下面语句
+
+     #+BEGIN_EXAMPLE
+       If(BarStatus == 2)
+       {
+         Commentary("BarCount[1] = ", Text(BarCount[1]));
+         Commentary("BarCount = ", Text(BarCount));
+         Commentary("CurrentBar[1] = ", Text(CurrentBar[1]));
+         Commentary("CurrentBar = ", Text(CurrentBar));
+       }
+     #+END_EXAMPLE
+
+     显示的结果分别是 301，301，300，300， 原因在于， =BarCount= 是数值类型变量，就是一个内存地址保存的值，因此，用不用索引，
+     其值都是一样的，但是，对于 =CurrentBar= ，它是序列型变量，由于加入了条件判断语句，在之前的 K 线上，该函数并不会运行，因此，
+     我们要索引前一根 K 线的索引值，只能用当前 K 线的索引值来作为前一根K线的索引值。
