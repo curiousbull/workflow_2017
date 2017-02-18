@@ -1,0 +1,267 @@
+
+* 多品种交易
+
+  1. 说明
+
+     - 多品种交易指的是图表中叠加多个商品，在一个公式中对多个商品进行交易。
+
+     - 默认情况下，如果公式中没有指定交易的品种，仅针对主图商品进行交易。
+
+     - 一个 K 线图最多可以叠加商品 4 个。
+
+     - 多个商品周期是固定的
+
+     - 查看方式，K 线图 --> 商品设置
+
+       [[file:week6/duopinzhong_01.png]]
+       [[file:week6/duopinzhong_02.png]]
+
+     - 默认的开、高、低、收、量等值在多品种交易中，指的就是主图的值
+
+  2. 示例 (双均线系统)
+
+     #+BEGIN_EXAMPLE
+       Params
+     	  Numeric ShortLength1(5);
+     	  Numeric LongLength1(20);
+     	  Numeric ShortLength2(5);
+     	  Numeric LongLength2(20);
+	
+       Vars
+     	  NumericSeries AvgShort_Com1(0);
+     	  NumericSeries AvgLong_Com1(0);
+     	  NumericSeries AvgShort_Com2(0);
+     	  NumericSeries AvgLong_Com2(0);
+
+       Begin
+     	  // 主图设置
+     	  AvgShort_Com1 = AverageFC(data0.Close, ShortLength1);
+     	  AvgLong_Com1 = AverageFC(data0.Close, LongLength1);
+     	  AvgShort_Com2 = AverageFC(data1.Close, ShortLength2);
+     	  AvgLong_Com2 = AverageFC(data1.Close, LongLength2);
+	
+	
+     	  If(data0.MarketPosition <> 1 And AvgShort_Com1 > AvgLong_Com1){
+     		  Buy(0, data0.Close);
+     	  }
+     	  If(data1.MarketPosition <> 1 And AvgShort_Com2 > AvgLong_Com2){
+     		  Buy(0, data1.Close);
+     	  }
+     	  If(data0.MarketPosition <> -1 And AvgShort_Com1 < AvgLong_Com1){
+     		  SellShort(0, data0.Close);
+     	  }
+     	  If(data1.MarketPosition <> -1 And AvgShort_Com2 < AvgLong_Com2){
+     		  SellShort(0, data1.Close);
+     	  }
+	
+       End
+     #+END_EXAMPLE
+     
+* 控制开平仓、止盈止损
+
+  1. 两个函数
+
+     - =MarketPosition=
+
+       + 返回数值型变量的函数，分别是 -1 (空仓)、0 (没有持仓)、1 (多仓)
+
+       + 返回的仓位并不是我们账户的仓位，其判断的仓位逻辑如下：当前图标是其样本空间，策略从
+         第一根 K 线开始运行，这时，系统仓是 0，然后策略按照条件不断开平仓，一直持续到当前
+         最新的一根 Bar，最后的系统仓结余的仓位就是 =MarketPosition= 返回的值。
+
+       + 通过头寸监控，可以将系统仓与账户仓进行同步
+
+     - =BarSinceEntry=
+
+       + 主要用于控制平仓，在止盈止损编写模式中，可能会遇到下面情况，当前 Bar 既出现止盈条件，
+         又出现止损条件，假如开仓后，价格下跌到止损条件，此时出现止损信号，这个出场是正确的，
+         但是如果这个 Bar 柱先到了止损价格，再到开仓价格，这个 Bar 柱上同样出现了开平仓信号，
+         先平仓，然后再开仓，这个是不正确的，K 线图无法描述哪个价格是先到，哪个价格是后来的，
+         测试报告无法区分这个开平仓是否正确，它认为都是可以实现的，会让测试报告不准确。
+
+       + 为避免上述情况发生，在进场那根 Bar 柱不进行平仓， =BarSinceEntry= 返回当前图表中，
+         第一根开仓的 Bar 柱到当前 Bar 柱的距离，中间是否由加仓对其没有影响，如果中间有平仓，
+         然后再开仓，那么最新的开仓的 Bar 就是初始点。
+
+  2. 止盈止损
+
+     - 提供了一种出场方式，示例：
+
+       止盈 30 跳；止损 10 跳
+
+       #+BEGIN_EXAMPLE
+         Params
+       	  Numeric FastLength(5);
+       	  Numeric SlowLength(20);
+       	  Numeric Offset_Profit(30);
+       	  Numeric Offset_Loss(10);
+         Vars
+       	  NumericSeries AvgValue1; 
+       	  NumericSeries AvgValue2;
+       	  Numeric PriceOpen(0);
+           // 尤其小心止盈止损价位，需要是序列型变量
+       	  NumericSeries ProfitCut;
+       	  NumericSeries LossCut;
+	
+         Begin
+       	  AvgValue1 = AverageFC(Close,FastLength);
+       	  AvgValue2 = AverageFC(Close,SlowLength);
+	
+       	  PlotNumeric("MA1",AvgValue1, 0, Red);
+       	  PlotNumeric("MA2",AvgValue2, 0, Green);		
+	
+       	  // 集合竞价和小节休息过滤
+       	  If(!CallAuctionFilter()) Return;
+	
+       	  If(MarketPosition <>1 && AvgValue1[1] > AvgValue2[1])
+       	  {
+       		  Buy(1,Open);
+       		  PriceOpen = Open;
+       		  ProfitCut = PriceOpen + Offset_Profit*MinMove*PriceScale;
+       		  LossCut = PriceOpen - Offset_Loss*MinMove*PriceScale;
+       	  }
+	
+       	  If(MarketPosition <> -1 && AvgValue1[1] < AvgValue2[1])
+       	  {
+       		  SellShort(1,Open);
+       		  PriceOpen = Open;
+       		  ProfitCut = PriceOpen - Offset_Profit*MinMove*PriceScale;
+       		  LossCut = PriceOpen + Offset_Loss*MinMove*PriceScale;
+       		  Commentary("止盈价："+Text(ProfitCut));
+       		  Commentary("止损价："+Text(LossCut));
+       		  Commentary("最小变动："+Text(MinMove));
+       		  Commentary("最小变动单位："+Text(PriceScale));
+       	  }
+	
+       	  // 加入止盈止损
+       	  // 30 跳止盈
+       	  // 10 跳止损
+       	  If(MarketPosition == 1 And High >= ProfitCut And BarsSinceEntry >= 1)
+       	  {
+       		  Sell(0, ProfitCut);
+       	  }
+       	  If(MarketPosition == 1 And Low <= LossCut And BarsSinceEntry >= 1)
+       	  {
+       		  Sell(0, Min(Open, LossCut));
+       	  }
+       	  If(MarketPosition == -1 And Low <= ProfitCut And BarsSinceEntry >= 1)
+       	  {
+       		  BuyToCover(0, ProfitCut);
+       		  Commentary("最低价："+Text(Low));
+       		  Commentary("止盈价："+Text(ProfitCut));
+       	  }
+	
+       	  If(MarketPosition == -1 And High >= LossCut And BarsSinceEntry >= 1)
+       	  {
+       		  BuyToCover(0, Max(Open, LossCut));
+       		  Commentary("最高价："+Text(High));
+       		  Commentary("止损价："+Text(LossCut));
+       	  }
+         End
+       #+END_EXAMPLE
+
+* 跟踪止损 (移动止损)
+  
+  1. 说明
+
+     在趋势类行情中，如果设定固定止盈，很可能错过一波大行情，跟踪止损是一种自适应的出场方式。
+     如果开仓后以后记录出现的最高价，如果现在的价格距离最高点回撤了 n%，那么就离场，这属于跟踪
+     止损。
+
+  2. 示例 (双均线策略，移动止损加入固定止损)
+
+     #+BEGIN_EXAMPLE
+       Params
+     	  Numeric FastLength(5);
+     	  Numeric SlowLength(20);
+     	  Numeric Offset_Profit(30);
+     	  Numeric Offset_Loss(10);
+       Vars
+     	  NumericSeries AvgValue1; 
+     	  NumericSeries AvgValue2;
+     	  NumericSeries PriceOpen(0);
+     	  NumericSeries ProfitCut;
+     	  NumericSeries LossCut;
+     	  NumericSeries TakeProfitPrice(0);
+	
+       Begin
+     	  AvgValue1 = AverageFC(Close,FastLength);
+     	  AvgValue2 = AverageFC(Close,SlowLength);
+	
+     	  PlotNumeric("MA1",AvgValue1, 0, Red);
+     	  PlotNumeric("MA2",AvgValue2, 0, Green);		
+	
+     	  // 集合竞价和小节休息过滤
+     	  If(!CallAuctionFilter()) Return;
+	
+     	  If(MarketPosition <>1 && AvgValue1[1] > AvgValue2[1])
+     	  {
+     		  Buy(1,Open);
+     		  PriceOpen = Open;
+     		  /*ProfitCut = PriceOpen + Offset_Profit*MinMove*PriceScale;
+     		  LossCut = PriceOpen - Offset_Loss*MinMove*PriceScale;*/
+     		  // 保护性止损
+     		  // 如果错估形式，可能开仓后行情是反向的
+     		  // 需要加入保护性止损
+     		  LossCut = PriceOpen - Offset_Loss/1000*PriceOpen;
+     		  Commentary("保护性止损价格："+Text(LossCut));
+     	  }
+	
+     	  If(MarketPosition <> -1 && AvgValue1[1] < AvgValue2[1])
+     	  {
+     		  SellShort(1,Open);
+     		  PriceOpen = Open;
+     		  /*ProfitCut = PriceOpen - Offset_Profit*MinMove*PriceScale;
+     		  LossCut = PriceOpen + Offset_Loss*MinMove*PriceScale;*/
+     		  // 保护性止损
+     		  LossCut = PriceOpen - Offset_Loss/1000*PriceOpen;
+     	  }
+	
+     	  // 加入跟踪止盈止损
+     	  If(MarketPosition == 1){
+     		  If(High > PriceOpen) PriceOpen = High;
+     		  TakeProfitPrice = PriceOpen - Offset_Profit/1000*PriceOpen;
+     		  Commentary("移动止盈价格："+Text(TakeProfitPrice)); 
+     	  }
+     	  If(MarketPosition == 1 And Low < TakeProfitPrice[1] And BarsSinceEntry >= 1){
+     		  If(LossCut > TakeProfitPrice[1]){
+     			  Sell(0, Min(Open, LossCut));
+     		  }
+     		  If(LossCut < TakeProfitPrice[1]){
+     			  Sell(0, Min(Open, TakeProfitPrice[1])); 
+     		  }
+     	  }
+     	  If(MarketPosition == -1){
+     		  If(Low < PriceOpen) PriceOpen = Low;
+     		  TakeProfitPrice = PriceOpen + Offset_Profit/1000*PriceOpen;
+     		  Commentary("移动止盈价格："+Text(TakeProfitPrice)); 
+     	  }
+     	  If(MarketPosition == -1 And Low < TakeProfitPrice[1] And BarsSinceEntry >= 1){
+     		  If(LossCut > TakeProfitPrice[1]){
+     			  BuyToCover(0, Min(Open, TakeProfitPrice[1]));
+     		  }
+     		  If(LossCut < TakeProfitPrice[1]){
+     			  BuyToCover(0, Min(Open, LossCut)); 
+     		  }
+     	  }
+       End
+     #+END_EXAMPLE
+
+* 加减仓
+  
+  1. 说明
+
+     - 首次开仓 2 手后每盈利 30 跳加仓一次，每次 1 手，最多加仓 3 次 (意味着 =CurrentEntries= 最大值是 4)
+
+     - 每亏损 30 跳减仓 1 手
+
+     - =CurrentEntries=
+       返回指定图层上当前持仓的建仓次数
+
+  2. 示例
+
+* 收盘平仓
+
+
+     
+
