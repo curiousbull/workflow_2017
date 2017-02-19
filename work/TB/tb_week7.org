@@ -70,3 +70,23 @@
       - Q 函数可以获取开高低收量仓以外的实时数据，比如当前买卖盘价与挂单量等。
 
       - A、Q 函数获取的数据不能保存，所以这些函数不支持回测，在图表上是不会发出交易信号的。
+
+** A 函数、Q 函数用法比较
+
+   | 说明 | 普通函数                | A、Q 函数                                        |
+   |------+-------------------------+-------------------------------------------------|
+   | 开多 | Buy(Lots, Price)        | A_SendOrder(Enum_Buy, Enum_Entry, Lots, Price)  |
+   | 平多 | Sell(Lots, Price)       | A_SendOrder(Enum_Sell, Enum_Exit, Lots, Price)  |
+   | 开空 | SellShort(Lots, Price)  | A_SendOrder(Enum_Sell, Enum_Entry, Lots, Price) |
+   | 平空 | BuyToCover(Lots, Price) | A_SendOrder(Enum_Buy, Enum_Exit, Lots, Price)   |
+      
+   1. 简单示例
+      
+      #+BEGIN_EXAMPLE
+        Begin
+          A_SendOrder(Enum_Buy, Enum_Entry, 1, Q_AskPrice);
+          A_SendOrder(Enum_Sell, Enum_Exit, 1, Q_BidPrice);
+          A_SendOrder(Enum_Sell, Enum_Entry, 1, Q_BidPrice);
+          A_SendOrder(Enum_Buy, Enum_Exit, 1, Q_AskPrice);
+        End
+      #+END_EXAMPLE
