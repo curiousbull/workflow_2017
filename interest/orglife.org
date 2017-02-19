@@ -1,0 +1,25 @@
+#+TITLE: Organize Your Life in A Plain Text 读书笔记
+#+AUTHOR: 胡琛
+
+* 基本设置
+
+  
+**  Org-Mode Setup
+
+   下面的代码可以使得 =Emacs= 打开后缀名为 =.org=, =.org_archive= 和 =.txt= 文件的时候，默认使用的 =major mode=
+   为 =org-mode=.
+
+   #+HEADER: :tangle no
+   #+BEGIN_SRC emacs-lisp
+     ;;;
+     ;;; Org Mode
+     ;;;
+     (add-to-list 'load-path (expand-file-name "~/git/org-mode/lisp"))
+     (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\|txt\\))$" . org-mode))
+     (require 'org)
+     ;;
+     ;; Standard key bindings
+     (global-set-key "\C-cl" 'org-store-link)
+     (global-set-key "\C-ca" 'org-agenda)
+     (global-set-key "\C-cb" 'org-iswitchb)
+   #+END_SRC
